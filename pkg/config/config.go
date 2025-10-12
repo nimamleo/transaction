@@ -34,7 +34,6 @@ type RedisConfig struct {
 	Host     string
 	Port     string
 	Password string
-	DB       int
 }
 
 type TigerBeetleConfig struct {
@@ -79,17 +78,10 @@ func loadDatabaseConfig() DatabaseConfig {
 }
 
 func loadRedisConfig() RedisConfig {
-	dbStr := getEnv("REDIS_DB")
-	db, err := strconv.Atoi(dbStr)
-	if err != nil {
-		panic(fmt.Sprintf("invalid REDIS_DB value: %s", dbStr))
-	}
-
 	return RedisConfig{
 		Host:     getEnv("REDIS_HOST"),
 		Port:     getEnv("REDIS_PORT"),
 		Password: getEnvWithDefault("REDIS_PASSWORD", ""),
-		DB:       db,
 	}
 }
 

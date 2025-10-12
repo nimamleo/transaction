@@ -30,12 +30,19 @@ func main() {
 	defer pgClient.Close()
 	logger.GetLogger().Info("PostgreSQL connected")
 
-	redisClient, err := redis.NewClient(cfg.Redis)
+	redisCacheClient, err := redis.NewClient(cfg.Redis, 0)
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatalf("Failed to connect to Redis Cache: %v", err)
 	}
-	defer redisClient.Close()
-	logger.GetLogger().Info("Redis connected")
+	defer redisCacheClient.Close()
+	logger.GetLogger().Info("Redis Cache connected (DB: 0)")
+
+	redisLockClient, err := redis.NewClient(cfg.Redis, 1)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis Lock: %v", err)
+	}
+	defer redisLockClient.Close()
+	logger.GetLogger().Info("Redis Lock connected (DB: 1)")
 
 	tbClient, err := tigerbeetle.NewClient(cfg.TigerBeetle)
 	if err != nil {

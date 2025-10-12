@@ -15,11 +15,11 @@ type Client struct {
 	db     int
 }
 
-func NewClient(cfg config.RedisConfig) (*Client, error) {
+func NewClient(cfg config.RedisConfig, db int) (*Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Password: cfg.Password,
-		DB:       cfg.DB,
+		DB:       db,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -31,7 +31,7 @@ func NewClient(cfg config.RedisConfig) (*Client, error) {
 
 	return &Client{
 		client: client,
-		db:     cfg.DB,
+		db:     db,
 	}, nil
 }
 
