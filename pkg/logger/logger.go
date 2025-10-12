@@ -3,6 +3,8 @@ package logger
 import (
 	"os"
 
+	"transaction/pkg/config"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,8 +17,8 @@ func init() {
 	log.SetLevel(logrus.InfoLevel)
 }
 
-func Init(level string) {
-	lvl, err := logrus.ParseLevel(level)
+func Init(cfg config.LoggerConfig) {
+	lvl, err := logrus.ParseLevel(cfg.Level)
 	if err != nil {
 		lvl = logrus.InfoLevel
 	}

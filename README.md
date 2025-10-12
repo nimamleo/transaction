@@ -11,11 +11,13 @@ transaction/
 │   ├── user/            # User domain
 │   ├── account/         # Account domain (includes queries)
 │   └── http/            # HTTP layer
-│       ├── handler/     # HTTP handlers
-│       ├── request/     # Request DTOs
-│       ├── response/    # Response DTOs
+│       ├── handler/     # HTTP handlers by domain
+│       │   ├── user/    # User handler (handler, request, response, mapper)
+│       │   ├── account/ # Account handler
+│       │   └── health/  # Health handler
 │       ├── server.go
 │       ├── router.go
+│       ├── config.go
 │       └── middleware.go
 ├── pkg/                 # Shared packages
 ├── migrations/          # Database migrations
