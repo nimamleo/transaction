@@ -52,13 +52,17 @@ func (s *Service) GetUserAccounts(ctx context.Context, userID string) ([]*domain
 }
 
 func (s *Service) GetAccountBalance(ctx context.Context, accountID string) (*BalanceInfo, error) {
-	//cachedBalance, err := s.cache.GetBalance(ctx, accountID)
-	//if err == nil && cachedBalance != nil {
-	//	return &BalanceInfo{
-	//		Balance:   cachedBalance.Balance,
-	//		UpdatedAt: cachedBalance.UpdatedAt,
-	//	}, nil
-	//}
+	cachedBalance, err := s.cache.GetBalance(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if cachedBalance != nil {
+		return &BalanceInfo{
+			Balance:   cachedBalance.Balance,
+			UpdatedAt: cachedBalance.UpdatedAt,
+		}, nil
+	}
 
 	account, err := s.accountRepo.GetByID(ctx, accountID)
 	if err != nil {
@@ -70,20 +74,14 @@ func (s *Service) GetAccountBalance(ctx context.Context, accountID string) (*Bal
 		return nil, err
 	}
 
-	if account.Balance != ledgerBalance {
-		if err := s.accountRepo.UpdateBalance(ctx, accountID, ledgerBalance); err != nil {
-			return nil, err
-		}
-		account.Balance = ledgerBalance
-		account.UpdatedAt = time.Now()
-	}
-
-	if err := s.cache.SetBalance(ctx, accountID, account.Balance, account.UpdatedAt); err != nil {
+	updatedAt := time.Now()
+	if err := s.cache.SetBalance(ctx, accountID, ledgerBalance, updatedAt); err != nil {
+		return nil, err
 	}
 
 	return &BalanceInfo{
-		Balance:   account.Balance,
-		UpdatedAt: account.UpdatedAt,
+		Balance:   ledgerBalance,
+		UpdatedAt: updatedAt,
 	}, nil
 }
 
@@ -128,7 +126,7 @@ func (s *Service) Deposit(ctx context.Context, accountID, reference string, amou
 		}
 	}()
 
-	exists, err := s.accountRepo.TransactionExistsByReference(ctx, reference)
+	exists, err := s.accountRepo.TransactionExistsByReference(ctx, reference, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +156,11 @@ func (s *Service) Deposit(ctx context.Context, accountID, reference string, amou
 	if err != nil {
 		return nil, err
 	}
-	//
-	//if err := s.cache.SetBalance(ctx, accountID, newBalance, time.Now()); err != nil {
-	//}
+
+	updatedAt := time.Now()
+	if err := s.cache.SetBalance(ctx, accountID, newBalance, updatedAt); err != nil {
+		return nil, err
+	}
 
 	return &DepositResult{
 		TransactionID: transaction.ID,
@@ -168,5 +168,88 @@ func (s *Service) Deposit(ctx context.Context, accountID, reference string, amou
 		Amount:        amount,
 		NewBalance:    newBalance,
 		Status:        string(result.Status),
+	}, nil
+}
+
+func (s *Service) Transfer(ctx context.Context, fromAccountID, toAccountID, reference string, amount int64) (*TransferResult, error) {
+	if amount <= 0 {
+		return nil, domain.ErrInvalidAmount
+	}
+
+	if fromAccountID == toAccountID {
+		return nil, domain.ErrSameAccountTransfer
+	}
+
+	lockKey := fmt.Sprintf("transfer:%s:%s", fromAccountID, reference)
+	lockTTL := 30 * time.Second
+
+	acquired, err := s.lock.Acquire(ctx, lockKey, lockTTL)
+	if err != nil {
+		return nil, err
+	}
+	if !acquired {
+		return nil, domain.ErrLockAcquisitionFailed
+	}
+
+	defer func() {
+		if releaseErr := s.lock.Release(ctx, lockKey); releaseErr != nil {
+		}
+	}()
+
+	exists, err := s.accountRepo.TransactionExistsByReference(ctx, reference, fromAccountID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, domain.ErrTransactionAlreadyExists
+	}
+
+	fromAccount, err := s.accountRepo.GetByID(ctx, fromAccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	toAccount, err := s.accountRepo.GetByID(ctx, toAccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if fromAccount.Currency != toAccount.Currency {
+		return nil, domain.ErrCurrencyMismatch
+	}
+
+	if fromAccount.Balance < amount {
+		return nil, domain.ErrInsufficientFunds
+	}
+
+	transferID, err := s.ledger.CreateTransfer(ctx, fromAccount.LedgerID, toAccount.LedgerID, amount)
+	if err != nil {
+		return nil, err
+	}
+
+	fromNewBalance := fromAccount.Balance - amount
+	toNewBalance := toAccount.Balance + amount
+
+	err = s.accountRepo.CreateTransferTransactions(ctx, fromAccountID, toAccountID, reference, amount, fromNewBalance, toNewBalance)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedAt := time.Now()
+	if err := s.cache.SetBalance(ctx, fromAccountID, fromNewBalance, updatedAt); err != nil {
+		return nil, err
+	}
+	if err := s.cache.SetBalance(ctx, toAccountID, toNewBalance, updatedAt); err != nil {
+		return nil, err
+	}
+
+	return &TransferResult{
+		TransferID:     transferID,
+		FromAccountID:  fromAccountID,
+		ToAccountID:    toAccountID,
+		Amount:         amount,
+		FromNewBalance: fromNewBalance,
+		ToNewBalance:   toNewBalance,
+		Status:         string(domain.TransactionStatusCompleted),
 	}, nil
 }

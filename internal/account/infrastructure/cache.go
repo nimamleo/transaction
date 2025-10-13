@@ -59,5 +59,5 @@ func (c *accountCache) SetBalance(ctx context.Context, accountID string, balance
 		return err
 	}
 
-	return c.client.Set(ctx, key, data, 1*time.Minute).Err()
+	return c.client.Set(ctx, key, data, 30*time.Second).Err()
 }

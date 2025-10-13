@@ -69,16 +69,13 @@ func (l *ledger) GetBalance(ctx context.Context, ledgerID string) (int64, error)
 
 	account := accounts[0]
 
-	var totalDebits, totalCredits uint64
+	creditsBig := account.CreditsPosted.BigInt()
+	debitsBig := account.DebitsPosted.BigInt()
 
-	for _, debit := range account.DebitsPosted {
-		totalDebits += uint64(debit)
-	}
-	for _, credit := range account.CreditsPosted {
-		totalCredits += uint64(credit)
-	}
+	creditsPosted := creditsBig.Int64()
+	debitsPosted := debitsBig.Int64()
+	balance := creditsPosted - debitsPosted
 
-	balance := int64(totalCredits) - int64(totalDebits)
 	return balance, nil
 }
 

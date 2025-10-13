@@ -30,12 +30,7 @@ func (h *Handler) CreateAccount(c echo.Context) error {
 		return stdresponse.SendHttpResponse(c, err.Error())
 	}
 
-	user := httpcontext.GetUser(c)
-	if user == nil {
-		return stdresponse.SendHttpResponse(c, "user not authenticated")
-	}
-
-	createdAccount, err := h.accountService.CreateAccount(c.Request().Context(), user.ID, req.Currency)
+	createdAccount, err := h.accountService.CreateAccount(c.Request().Context(), req.UserID, req.Currency)
 	if err != nil {
 		return stdresponse.SendHttpResponse(c, err)
 	}
@@ -96,6 +91,34 @@ func (h *Handler) Deposit(c echo.Context) error {
 		Amount:        result.Amount,
 		NewBalance:    result.NewBalance,
 		Status:        result.Status,
+	}
+
+	return stdresponse.SendHttpResponse(c, genericcode.OK, response)
+}
+
+func (h *Handler) Transfer(c echo.Context) error {
+	var req TransferRequest
+	if err := c.Bind(&req); err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return stdresponse.SendHttpResponse(c, err.Error())
+	}
+
+	result, err := h.accountService.Transfer(c.Request().Context(), req.FromAccountID, req.ToAccountID, req.Reference, req.Amount)
+	if err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	response := TransferResponse{
+		TransferID:     result.TransferID,
+		FromAccountID:  result.FromAccountID,
+		ToAccountID:    result.ToAccountID,
+		Amount:         result.Amount,
+		FromNewBalance: result.FromNewBalance,
+		ToNewBalance:   result.ToNewBalance,
+		Status:         result.Status,
 	}
 
 	return stdresponse.SendHttpResponse(c, genericcode.OK, response)

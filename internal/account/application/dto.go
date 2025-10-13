@@ -14,3 +14,13 @@ type DepositResult struct {
 	NewBalance    int64
 	Status        string
 }
+
+type TransferResult struct {
+	TransferID     string
+	FromAccountID  string
+	ToAccountID    string
+	Amount         int64
+	FromNewBalance int64
+	ToNewBalance   int64
+	Status         string
+}

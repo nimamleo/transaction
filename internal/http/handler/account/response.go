@@ -22,3 +22,13 @@ type DepositResponse struct {
 	NewBalance    int64  `json:"new_balance"`
 	Status        string `json:"status"`
 }
+
+type TransferResponse struct {
+	TransferID     string `json:"transfer_id"`
+	FromAccountID  string `json:"from_account_id"`
+	ToAccountID    string `json:"to_account_id"`
+	Amount         int64  `json:"amount"`
+	FromNewBalance int64  `json:"from_new_balance"`
+	ToNewBalance   int64  `json:"to_new_balance"`
+	Status         string `json:"status"`
+}

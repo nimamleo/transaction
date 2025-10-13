@@ -13,10 +13,10 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE INDEX idx_transactions_account_id ON transactions(account_id);
 CREATE INDEX idx_transactions_reference ON transactions(reference);
 CREATE INDEX idx_transactions_status ON transactions(status);
-CREATE UNIQUE INDEX idx_transactions_reference_unique ON transactions(reference);
+CREATE UNIQUE INDEX idx_transactions_account_reference_unique ON transactions(account_id, reference);
 
 -- +migrate Down
-DROP INDEX IF EXISTS idx_transactions_reference_unique;
+DROP INDEX IF EXISTS idx_transactions_account_reference_unique;
 DROP INDEX IF EXISTS idx_transactions_status;
 DROP INDEX IF EXISTS idx_transactions_reference;
 DROP INDEX IF EXISTS idx_transactions_account_id;

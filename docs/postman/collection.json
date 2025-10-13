@@ -7,7 +7,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8080",
+			"value": "http://localhost:8081",
 			"type": "string"
 		},
 		{
@@ -134,7 +134,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"currency\": \"USD\"\n}"
+					"raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"currency\": \"USD\"\n}"
 				},
 				"url": {
 					"raw": "{{base_url}}/api/v1/accounts",
@@ -219,6 +219,53 @@
 					"raw": "{{base_url}}/api/v1/accounts/{{account_id}}/deposit",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "accounts", "{{account_id}}", "deposit"]
+				}
+			}
+		},
+		{
+			"name": "Transfer Between Accounts",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
+							"    const response = pm.response.json();",
+							"    if (response.data) {",
+							"        console.log('Transfer ID:', response.data.transfer_id);",
+							"        console.log('From Account:', response.data.from_account_id);",
+							"        console.log('To Account:', response.data.to_account_id);",
+							"        console.log('Amount:', response.data.amount);",
+							"        console.log('From New Balance:', response.data.from_new_balance);",
+							"        console.log('To New Balance:', response.data.to_new_balance);",
+							"        console.log('Status:', response.data.status);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"from_account_id\": \"407b9824-0e8a-465c-9b55-22cd3018e6e7\",\n  \"to_account_id\": \"YOUR_TO_ACCOUNT_ID\",\n  \"amount\": 500,\n  \"reference\": \"order-123\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/transfers",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "transfers"]
 				}
 			}
 		}

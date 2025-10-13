@@ -14,4 +14,6 @@ var (
 	ErrInvalidAmount            = richerror.NewWithCode(genericcode.BadRequest, "invalid amount")
 	ErrLockAcquisitionFailed    = richerror.NewWithCode(genericcode.InternalServerError, "failed to acquire lock")
 	ErrTransactionAlreadyExists = richerror.NewWithCode(genericcode.BadRequest, "transaction with this reference already exists")
+	ErrSameAccountTransfer      = richerror.NewWithCode(genericcode.BadRequest, "cannot transfer to the same account")
+	ErrCurrencyMismatch         = richerror.NewWithCode(genericcode.BadRequest, "currency mismatch between accounts")
 )
