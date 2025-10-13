@@ -220,30 +220,6 @@ func (r *accountRepository) SystemAccountExistsByCurrency(ctx context.Context, c
 	return exists, nil
 }
 
-func (r *accountRepository) CreateTransaction(ctx context.Context, transaction *domain.Transaction) error {
-	query := `
-		INSERT INTO transactions (id, account_id, reference, amount, type, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`
-
-	_, err := r.db.ExecContext(ctx, query,
-		transaction.ID,
-		transaction.AccountID,
-		transaction.Reference,
-		transaction.Amount,
-		string(transaction.Type),
-		string(transaction.Status),
-		transaction.CreatedAt,
-		transaction.UpdatedAt,
-	)
-
-	if err != nil {
-		return richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to create transaction")
-	}
-
-	return nil
-}
-
 func (r *accountRepository) GetTransactionByReference(ctx context.Context, reference string) (*domain.Transaction, error) {
 	query := `
 		SELECT id, account_id, reference, amount, type, status, created_at, updated_at
@@ -291,4 +267,59 @@ func (r *accountRepository) TransactionExistsByReference(ctx context.Context, re
 	}
 
 	return exists, nil
+}
+
+func (r *accountRepository) CreateTransactionAndUpdateBalance(ctx context.Context, transaction *domain.Transaction, accountID string, newBalance int64) (*domain.Transaction, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to begin transaction")
+	}
+	defer tx.Rollback()
+
+	transaction.Complete()
+
+	createTransactionQuery := `
+		INSERT INTO transactions (id, account_id, reference, amount, type, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+
+	_, err = tx.ExecContext(ctx, createTransactionQuery,
+		transaction.ID,
+		transaction.AccountID,
+		transaction.Reference,
+		transaction.Amount,
+		string(transaction.Type),
+		string(transaction.Status),
+		transaction.CreatedAt,
+		transaction.UpdatedAt,
+	)
+	if err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to create transaction")
+	}
+
+	updateBalanceQuery := `
+		UPDATE accounts
+		SET balance = $1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+
+	result, err := tx.ExecContext(ctx, updateBalanceQuery, newBalance, accountID)
+	if err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to update balance")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to get rows affected")
+	}
+
+	if rowsAffected == 0 {
+		return nil, richerror.NewWithCode(genericcode.NotFound, "account not found")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to commit transaction")
+	}
+
+	return transaction, nil
 }

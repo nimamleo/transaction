@@ -13,7 +13,7 @@ type AccountRepository interface {
 	GetSystemAccountByCurrency(ctx context.Context, currency Currency) (*SystemAccount, error)
 	SystemAccountExistsByCurrency(ctx context.Context, currency Currency) (bool, error)
 
-	CreateTransaction(ctx context.Context, transaction *Transaction) error
 	GetTransactionByReference(ctx context.Context, reference string) (*Transaction, error)
 	TransactionExistsByReference(ctx context.Context, reference string) (bool, error)
+	CreateTransactionAndUpdateBalance(ctx context.Context, transaction *Transaction, accountID string, newBalance int64) (*Transaction, error)
 }

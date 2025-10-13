@@ -52,13 +52,13 @@ func (s *Service) GetUserAccounts(ctx context.Context, userID string) ([]*domain
 }
 
 func (s *Service) GetAccountBalance(ctx context.Context, accountID string) (*BalanceInfo, error) {
-	cachedBalance, err := s.cache.GetBalance(ctx, accountID)
-	if err == nil && cachedBalance != nil {
-		return &BalanceInfo{
-			Balance:   cachedBalance.Balance,
-			UpdatedAt: cachedBalance.UpdatedAt,
-		}, nil
-	}
+	//cachedBalance, err := s.cache.GetBalance(ctx, accountID)
+	//if err == nil && cachedBalance != nil {
+	//	return &BalanceInfo{
+	//		Balance:   cachedBalance.Balance,
+	//		UpdatedAt: cachedBalance.UpdatedAt,
+	//	}, nil
+	//}
 
 	account, err := s.accountRepo.GetByID(ctx, accountID)
 	if err != nil {
@@ -146,38 +146,27 @@ func (s *Service) Deposit(ctx context.Context, accountID, reference string, amou
 		return nil, err
 	}
 
-	transaction := domain.NewTransaction(accountID, reference, amount, domain.TransactionTypeDeposit)
-
-	if err := s.accountRepo.CreateTransaction(ctx, transaction); err != nil {
-		return nil, err
-	}
-
 	transferID, err := s.ledger.CreateTransfer(ctx, systemAccount.LedgerID, account.LedgerID, amount)
 	if err != nil {
-		transaction.Fail()
-		s.accountRepo.CreateTransaction(ctx, transaction)
 		return nil, err
 	}
 
+	transaction := domain.NewTransaction(accountID, reference, amount, domain.TransactionTypeDeposit)
 	newBalance := account.Balance + amount
-	if err := s.accountRepo.UpdateBalance(ctx, accountID, newBalance); err != nil {
-		transaction.Fail()
-		s.accountRepo.CreateTransaction(ctx, transaction)
+
+	result, err := s.accountRepo.CreateTransactionAndUpdateBalance(ctx, transaction, accountID, newBalance)
+	if err != nil {
 		return nil, err
 	}
-
-	transaction.Complete()
-	if err := s.accountRepo.CreateTransaction(ctx, transaction); err != nil {
-	}
-
-	if err := s.cache.SetBalance(ctx, accountID, newBalance, time.Now()); err != nil {
-	}
+	//
+	//if err := s.cache.SetBalance(ctx, accountID, newBalance, time.Now()); err != nil {
+	//}
 
 	return &DepositResult{
 		TransactionID: transaction.ID,
 		TransferID:    transferID,
 		Amount:        amount,
 		NewBalance:    newBalance,
-		Status:        string(transaction.Status),
+		Status:        string(result.Status),
 	}, nil
 }
