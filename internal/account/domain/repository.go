@@ -8,4 +8,8 @@ type AccountRepository interface {
 	GetByID(ctx context.Context, id string) (*Account, error)
 	GetByUserID(ctx context.Context, userID string) ([]*Account, error)
 	UpdateBalance(ctx context.Context, id string, balance int64) error
+
+	CreateSystemAccount(ctx context.Context, systemAccount *SystemAccount) error
+	GetSystemAccountByCurrency(ctx context.Context, currency Currency) (*SystemAccount, error)
+	SystemAccountExistsByCurrency(ctx context.Context, currency Currency) (bool, error)
 }

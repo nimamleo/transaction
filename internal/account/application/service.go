@@ -82,3 +82,23 @@ func (s *Service) GetAccountBalance(ctx context.Context, accountID string) (*Bal
 		UpdatedAt: account.UpdatedAt,
 	}, nil
 }
+
+func (s *Service) InitializeSystemAccount(ctx context.Context, currency domain.Currency, amount int64) error {
+	exists, err := s.accountRepo.SystemAccountExistsByCurrency(ctx, currency)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
+	ledgerID, err := s.ledger.CreateAccount(ctx, currency)
+	if err != nil {
+		return err
+	}
+
+	systemAccount := domain.NewSystemAccount(ledgerID, currency, amount)
+
+	return s.accountRepo.CreateSystemAccount(ctx, systemAccount)
+}

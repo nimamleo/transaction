@@ -151,3 +151,71 @@ func (r *accountRepository) GetByUserID(ctx context.Context, userID string) ([]*
 
 	return accounts, nil
 }
+
+func (r *accountRepository) CreateSystemAccount(ctx context.Context, systemAccount *domain.SystemAccount) error {
+	query := `
+		INSERT INTO system_accounts (id, ledger_id, currency, amount, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		systemAccount.ID,
+		systemAccount.LedgerID,
+		systemAccount.Currency.String(),
+		systemAccount.Amount,
+		systemAccount.CreatedAt,
+		systemAccount.UpdatedAt,
+	)
+
+	if err != nil {
+		return richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to create system account")
+	}
+
+	return nil
+}
+
+func (r *accountRepository) GetSystemAccountByCurrency(ctx context.Context, currency domain.Currency) (*domain.SystemAccount, error) {
+	query := `
+		SELECT id, ledger_id, currency, amount, created_at, updated_at
+		FROM system_accounts
+		WHERE currency = $1
+	`
+
+	var systemAccount domain.SystemAccount
+	var currencyStr string
+
+	err := r.db.QueryRowContext(ctx, query, currency.String()).Scan(
+		&systemAccount.ID,
+		&systemAccount.LedgerID,
+		&currencyStr,
+		&systemAccount.Amount,
+		&systemAccount.CreatedAt,
+		&systemAccount.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, richerror.WrapWithCode(err, genericcode.NotFound, "system account not found")
+		}
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to fetch system account")
+	}
+
+	systemAccount.Currency = domain.Currency(currencyStr)
+	return &systemAccount, nil
+}
+
+func (r *accountRepository) SystemAccountExistsByCurrency(ctx context.Context, currency domain.Currency) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM system_accounts WHERE currency = $1
+		)
+	`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, currency.String()).Scan(&exists)
+	if err != nil {
+		return false, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to check system account existence")
+	}
+
+	return exists, nil
+}

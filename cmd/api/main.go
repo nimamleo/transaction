@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	accountApp "transaction/internal/account/application"
+	accountDomain "transaction/internal/account/domain"
 	accountInfra "transaction/internal/account/infrastructure"
 	"transaction/internal/http"
 	accountHandler "transaction/internal/http/handler/account"
@@ -85,6 +86,12 @@ func main() {
 	accountCache := accountInfra.NewAccountCache(redisCacheClient.GetClient())
 	accountService := accountApp.NewService(accountRepo, accountLedger, accountCache)
 	accountHdlr := accountHandler.NewHandler(accountService)
+
+	ctx := context.Background()
+	if err := accountService.InitializeSystemAccount(ctx, accountDomain.USD, 100000000); err != nil {
+		log.Fatalf("Failed to initialize system account: %v", err)
+	}
+	logger.GetLogger().Info("System account initialized")
 
 	router := http.NewRouter(userHdlr, accountHdlr, userService)
 	server := http.NewServer(cfg.Server, router)
