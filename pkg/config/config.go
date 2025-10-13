@@ -14,6 +14,7 @@ type Config struct {
 	Redis       RedisConfig
 	TigerBeetle TigerBeetleConfig
 	Logger      LoggerConfig
+	Migration   MigrationConfig
 }
 
 type ServerConfig struct {
@@ -38,11 +39,17 @@ type RedisConfig struct {
 
 type TigerBeetleConfig struct {
 	ClusterID uint64
+	Host      string
 	Port      string
 }
 
 type LoggerConfig struct {
 	Level string
+}
+
+type MigrationConfig struct {
+	Enabled   bool
+	Direction string
 }
 
 func Load() *Config {
@@ -56,6 +63,7 @@ func Load() *Config {
 		Redis:       loadRedisConfig(),
 		TigerBeetle: loadTigerBeetleConfig(),
 		Logger:      loadLoggerConfig(),
+		Migration:   loadMigrationConfig(),
 	}
 }
 
@@ -94,6 +102,7 @@ func loadTigerBeetleConfig() TigerBeetleConfig {
 
 	return TigerBeetleConfig{
 		ClusterID: clusterID,
+		Host:      getEnv("TIGERBEETLE_HOST"),
 		Port:      getEnv("TIGERBEETLE_PORT"),
 	}
 }
@@ -106,6 +115,16 @@ func loadLoggerConfig() LoggerConfig {
 
 	return LoggerConfig{
 		Level: level,
+	}
+}
+
+func loadMigrationConfig() MigrationConfig {
+	enabled := getEnvWithDefault("MIGRATION_ENABLED", "true")
+	direction := getEnvWithDefault("MIGRATION_DIRECTION", "up")
+
+	return MigrationConfig{
+		Enabled:   enabled == "true",
+		Direction: direction,
 	}
 }
 

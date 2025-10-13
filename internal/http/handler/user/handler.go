@@ -29,12 +29,12 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return stdresponse.SendHttpResponse(c, err.Error())
 	}
 
-	createdUser, err := h.userService.CreateUser(c.Request().Context(), req.Name, req.Email)
+	result, err := h.userService.CreateUser(c.Request().Context(), req.Name, req.Email)
 	if err != nil {
 		return stdresponse.SendHttpResponse(c, err)
 	}
 
-	return stdresponse.SendHttpResponse(c, genericcode.OK, ToResponse(createdUser))
+	return stdresponse.SendHttpResponse(c, genericcode.OK, ToCreateResponse(result.User, result.APIKey))
 }
 
 func (h *Handler) GetUser(c echo.Context) error {

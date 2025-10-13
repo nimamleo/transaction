@@ -1,26 +1,39 @@
 package http
 
 import (
+	accountHandler "transaction/internal/http/handler/account"
 	userHandler "transaction/internal/http/handler/user"
+	"transaction/internal/user/application"
 
 	"github.com/labstack/echo/v4"
 )
 
 type Router struct {
-	userHandler *userHandler.Handler
+	userHandler    *userHandler.Handler
+	accountHandler *accountHandler.Handler
+	userService    *application.Service
 }
 
-func NewRouter(userHandler *userHandler.Handler) *Router {
+func NewRouter(userHandler *userHandler.Handler, accountHandler *accountHandler.Handler, userService *application.Service) *Router {
 	return &Router{
-		userHandler: userHandler,
+		userHandler:    userHandler,
+		accountHandler: accountHandler,
+		userService:    userService,
 	}
 }
 
 func (r *Router) Register(e *echo.Echo) {
-	api := e.Group("/docs/v1")
+	api := e.Group("/api/v1")
 
 	api.POST("/users", r.userHandler.CreateUser)
-	api.GET("/users/:id", r.userHandler.GetUser)
+
+	authAPI := api.Group("")
+	authAPI.Use(AuthMiddleware(r.userService))
+
+	authAPI.GET("/users/:id", r.userHandler.GetUser)
+	authAPI.POST("/accounts", r.accountHandler.CreateAccount)
+	authAPI.GET("/accounts", r.accountHandler.GetAccounts)
+	authAPI.GET("/accounts/:id/balance", r.accountHandler.GetAccountBalance)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "healthy"})

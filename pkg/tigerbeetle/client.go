@@ -14,9 +14,9 @@ type Client struct {
 }
 
 func NewClient(cfg config.TigerBeetleConfig) (*Client, error) {
-	addresses := []string{fmt.Sprintf(":%s", cfg.Port)}
+	addresses := []string{fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)}
 
-	client, err := tb.NewClient(types.ToUint128(cfg.ClusterID), addresses, 32)
+	client, err := tb.NewClient(types.ToUint128(cfg.ClusterID), addresses)
 	if err != nil {
 		return nil, fmt.Errorf("create tigerbeetle client: %w", err)
 	}

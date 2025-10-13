@@ -12,11 +12,16 @@
 		},
 		{
 			"key": "api_key",
-			"value": "your-secret-api-key-here",
+			"value": "",
 			"type": "string"
 		},
 		{
 			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "account_id",
 			"value": "",
 			"type": "string"
 		}
@@ -41,11 +46,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"if (pm.response.code === 201 || pm.response.code === 200) {",
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
 							"    const response = pm.response.json();",
 							"    if (response.data && response.data.id) {",
 							"        pm.collectionVariables.set('user_id', response.data.id);",
 							"        console.log('User ID:', response.data.id);",
+							"    }",
+							"    if (response.data && response.data.api_key) {",
+							"        pm.collectionVariables.set('api_key', response.data.api_key);",
+							"        console.log('API Key:', response.data.api_key);",
 							"    }",
 							"}"
 						],
@@ -59,10 +68,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json"
-					},
-					{
-						"key": "X-API-KEY",
-						"value": "{{api_key}}"
 					}
 				],
 				"body": {
@@ -90,6 +95,85 @@
 					"raw": "{{base_url}}/api/v1/users/{{user_id}}",
 					"host": ["{{base_url}}"],
 					"path": ["api", "v1", "users", "{{user_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Create Account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
+							"    const response = pm.response.json();",
+							"    if (response.data && response.data.id) {",
+							"        pm.collectionVariables.set('account_id', response.data.id);",
+							"        console.log('Account ID:', response.data.id);",
+							"        console.log('Ledger ID:', response.data.ledger_id);",
+							"        console.log('Currency:', response.data.currency);",
+							"        console.log('Balance:', response.data.balance);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"currency\": \"USD\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts"]
+				}
+			}
+		},
+		{
+			"name": "Get All Accounts",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts"]
+				}
+			}
+		},
+		{
+			"name": "Get Account Balance",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts/{{account_id}}/balance",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts", "{{account_id}}", "balance"]
 				}
 			}
 		}

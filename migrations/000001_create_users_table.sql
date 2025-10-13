@@ -1,3 +1,4 @@
+-- +migrate Up
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
@@ -9,4 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX idx_users_email ON users(email);
+
+-- +migrate Down
+DROP INDEX IF EXISTS idx_users_email;
+DROP TABLE IF EXISTS users;
 
