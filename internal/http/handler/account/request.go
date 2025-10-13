@@ -13,3 +13,15 @@ func (r CreateAccountRequest) Validate() error {
 		validation.Field(&r.Currency, validation.Required, validation.In("USD", "EUR", "GBP")),
 	)
 }
+
+type DepositRequest struct {
+	Amount    int64  `json:"amount"`
+	Reference string `json:"reference"`
+}
+
+func (r DepositRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Amount, validation.Required, validation.Min(1)),
+		validation.Field(&r.Reference, validation.Required, validation.Length(1, 255)),
+	)
+}

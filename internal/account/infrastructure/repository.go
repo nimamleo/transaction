@@ -219,3 +219,76 @@ func (r *accountRepository) SystemAccountExistsByCurrency(ctx context.Context, c
 
 	return exists, nil
 }
+
+func (r *accountRepository) CreateTransaction(ctx context.Context, transaction *domain.Transaction) error {
+	query := `
+		INSERT INTO transactions (id, account_id, reference, amount, type, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		transaction.ID,
+		transaction.AccountID,
+		transaction.Reference,
+		transaction.Amount,
+		string(transaction.Type),
+		string(transaction.Status),
+		transaction.CreatedAt,
+		transaction.UpdatedAt,
+	)
+
+	if err != nil {
+		return richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to create transaction")
+	}
+
+	return nil
+}
+
+func (r *accountRepository) GetTransactionByReference(ctx context.Context, reference string) (*domain.Transaction, error) {
+	query := `
+		SELECT id, account_id, reference, amount, type, status, created_at, updated_at
+		FROM transactions
+		WHERE reference = $1
+	`
+
+	var transaction domain.Transaction
+	var typeStr, statusStr string
+
+	err := r.db.QueryRowContext(ctx, query, reference).Scan(
+		&transaction.ID,
+		&transaction.AccountID,
+		&transaction.Reference,
+		&transaction.Amount,
+		&typeStr,
+		&statusStr,
+		&transaction.CreatedAt,
+		&transaction.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, richerror.WrapWithCode(err, genericcode.NotFound, "transaction not found")
+		}
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to fetch transaction")
+	}
+
+	transaction.Type = domain.TransactionType(typeStr)
+	transaction.Status = domain.TransactionStatus(statusStr)
+	return &transaction, nil
+}
+
+func (r *accountRepository) TransactionExistsByReference(ctx context.Context, reference string) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM transactions WHERE reference = $1
+		)
+	`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, reference).Scan(&exists)
+	if err != nil {
+		return false, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to check transaction existence")
+	}
+
+	return exists, nil
+}

@@ -72,3 +72,31 @@ func (h *Handler) GetAccountBalance(c echo.Context) error {
 
 	return stdresponse.SendHttpResponse(c, genericcode.OK, response)
 }
+
+func (h *Handler) Deposit(c echo.Context) error {
+	accountID := c.Param("id")
+
+	var req DepositRequest
+	if err := c.Bind(&req); err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return stdresponse.SendHttpResponse(c, err.Error())
+	}
+
+	result, err := h.accountService.Deposit(c.Request().Context(), accountID, req.Reference, req.Amount)
+	if err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	response := DepositResponse{
+		TransactionID: result.TransactionID,
+		TransferID:    result.TransferID,
+		Amount:        result.Amount,
+		NewBalance:    result.NewBalance,
+		Status:        result.Status,
+	}
+
+	return stdresponse.SendHttpResponse(c, genericcode.OK, response)
+}

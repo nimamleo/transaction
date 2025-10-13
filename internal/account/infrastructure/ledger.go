@@ -74,3 +74,41 @@ func (l *ledger) GetBalance(ctx context.Context, ledgerID string) (int64, error)
 	balance := int64(debitsLow) - int64(creditsLow)
 	return balance, nil
 }
+
+func (l *ledger) CreateTransfer(ctx context.Context, fromLedgerID, toLedgerID string, amount int64) (string, error) {
+	fromID, err := stringToUint128(fromLedgerID)
+	if err != nil {
+		return "", richerror.WrapWithCode(err, genericcode.BadRequest, "invalid from ledger ID format")
+	}
+
+	toID, err := stringToUint128(toLedgerID)
+	if err != nil {
+		return "", richerror.WrapWithCode(err, genericcode.BadRequest, "invalid to ledger ID format")
+	}
+
+	transferID := types.ID()
+
+	transfers := []types.Transfer{
+		{
+			ID:              transferID,
+			DebitAccountID:  fromID,
+			CreditAccountID: toID,
+			Amount:          types.ToUint128(uint64(amount)),
+			Ledger:          LedgerID,
+			Code:            1,
+			Flags:           0,
+			Timestamp:       0,
+		},
+	}
+
+	results, err := l.client.GetClient().CreateTransfers(transfers)
+	if err != nil {
+		return "", richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to create ledger transfer")
+	}
+
+	if len(results) > 0 {
+		return "", richerror.NewWithCode(genericcode.InternalServerError, fmt.Sprintf("ledger transfer creation failed: %v", results[0]))
+	}
+
+	return uint128ToString(transferID), nil
+}

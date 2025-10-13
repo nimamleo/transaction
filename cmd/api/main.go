@@ -84,7 +84,8 @@ func main() {
 	accountRepo := accountInfra.NewAccountRepository(pgClient.GetDB())
 	accountLedger := accountInfra.NewLedger(tbClient)
 	accountCache := accountInfra.NewAccountCache(redisCacheClient.GetClient())
-	accountService := accountApp.NewService(accountRepo, accountLedger, accountCache)
+	accountLock := accountInfra.NewLock(redisLockClient.GetClient())
+	accountService := accountApp.NewService(accountRepo, accountLedger, accountCache, accountLock)
 	accountHdlr := accountHandler.NewHandler(accountService)
 
 	ctx := context.Background()

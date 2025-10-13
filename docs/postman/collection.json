@@ -176,6 +176,51 @@
 					"path": ["api", "v1", "accounts", "{{account_id}}", "balance"]
 				}
 			}
+		},
+		{
+			"name": "Deposit to Account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
+							"    const response = pm.response.json();",
+							"    if (response.data) {",
+							"        console.log('Transaction ID:', response.data.transaction_id);",
+							"        console.log('Transfer ID:', response.data.transfer_id);",
+							"        console.log('Amount:', response.data.amount);",
+							"        console.log('New Balance:', response.data.new_balance);",
+							"        console.log('Status:', response.data.status);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"amount\": 10000,\n  \"reference\": \"initial-topup-1\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts/{{account_id}}/deposit",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts", "{{account_id}}", "deposit"]
+				}
+			}
 		}
 	]
 }

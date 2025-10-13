@@ -12,4 +12,8 @@ type AccountRepository interface {
 	CreateSystemAccount(ctx context.Context, systemAccount *SystemAccount) error
 	GetSystemAccountByCurrency(ctx context.Context, currency Currency) (*SystemAccount, error)
 	SystemAccountExistsByCurrency(ctx context.Context, currency Currency) (bool, error)
+
+	CreateTransaction(ctx context.Context, transaction *Transaction) error
+	GetTransactionByReference(ctx context.Context, reference string) (*Transaction, error)
+	TransactionExistsByReference(ctx context.Context, reference string) (bool, error)
 }
