@@ -43,3 +43,14 @@ func (r TransferRequest) Validate() error {
 		validation.Field(&r.Reference, validation.Required, validation.Length(1, 255)),
 	)
 }
+
+type TransactionHistoryRequest struct {
+	Limit int    `query:"limit"`
+	After string `query:"after"`
+}
+
+func (r TransactionHistoryRequest) Validate() error {
+	return validation.ValidateStruct(&r,
+		validation.Field(&r.Limit, validation.Min(1), validation.Max(100)),
+	)
+}

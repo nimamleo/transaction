@@ -123,3 +123,46 @@ func (h *Handler) Transfer(c echo.Context) error {
 
 	return stdresponse.SendHttpResponse(c, genericcode.OK, response)
 }
+
+func (h *Handler) GetAccountTransactionHistory(c echo.Context) error {
+	accountID := c.Param("id")
+
+	var req TransactionHistoryRequest
+	if err := c.Bind(&req); err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return stdresponse.SendHttpResponse(c, err.Error())
+	}
+
+	if req.Limit == 0 {
+		req.Limit = 20
+	}
+
+	result, err := h.accountService.GetAccountTransactionHistory(c.Request().Context(), accountID, req.Limit, req.After)
+	if err != nil {
+		return stdresponse.SendHttpResponse(c, err)
+	}
+
+	transactions := make([]TransactionResponse, len(result.Transactions))
+	for i, tx := range result.Transactions {
+		transactions[i] = TransactionResponse{
+			ID:        tx.ID,
+			Reference: tx.Reference,
+			Amount:    tx.Amount,
+			Type:      tx.Type,
+			Status:    tx.Status,
+			CreatedAt: tx.CreatedAt,
+			UpdatedAt: tx.UpdatedAt,
+		}
+	}
+
+	response := TransactionHistoryResponse{
+		Transactions: transactions,
+		NextCursor:   result.NextCursor,
+		HasMore:      result.HasMore,
+	}
+
+	return stdresponse.SendHttpResponse(c, genericcode.OK, response)
+}

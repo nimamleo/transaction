@@ -268,6 +268,98 @@
 					"path": ["api", "v1", "transfers"]
 				}
 			}
+		},
+		{
+			"name": "Get Account Transaction History",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
+							"    const response = pm.response.json();",
+							"    if (response.data) {",
+							"        console.log('Transactions count:', response.data.transactions.length);",
+							"        console.log('Has more:', response.data.has_more);",
+							"        console.log('Next cursor:', response.data.next_cursor);",
+							"        if (response.data.transactions.length > 0) {",
+							"            console.log('First transaction:', response.data.transactions[0]);",
+							"        }",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts/{{account_id}}/transactions?limit=10",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts", "{{account_id}}", "transactions"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "10"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "Get Account Transaction History - Next Page",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200 || pm.response.code === 201) {",
+							"    const response = pm.response.json();",
+							"    if (response.data) {",
+							"        console.log('Transactions count:', response.data.transactions.length);",
+							"        console.log('Has more:', response.data.has_more);",
+							"        console.log('Next cursor:', response.data.next_cursor);",
+							"        if (response.data.transactions.length > 0) {",
+							"            console.log('First transaction:', response.data.transactions[0]);",
+							"        }",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "{{api_key}}"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/accounts/{{account_id}}/transactions?limit=10&after=YOUR_TRANSACTION_ID",
+					"host": ["{{base_url}}"],
+					"path": ["api", "v1", "accounts", "{{account_id}}", "transactions"],
+					"query": [
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "after",
+							"value": "YOUR_TRANSACTION_ID"
+						}
+					]
+				}
+			}
 		}
 	]
 }

@@ -410,3 +410,64 @@ func (r *accountRepository) CreateTransferTransactions(ctx context.Context, from
 
 	return nil
 }
+
+func (r *accountRepository) GetAccountTransactions(ctx context.Context, accountID string, limit int, after string) ([]*domain.Transaction, error) {
+	var query string
+	var args []interface{}
+
+	if after != "" {
+		query = `
+			SELECT id, account_id, reference, amount, type, status, created_at, updated_at
+			FROM transactions
+			WHERE account_id = $1 AND id < $2
+			ORDER BY id DESC
+			LIMIT $3
+		`
+		args = []interface{}{accountID, after, limit}
+	} else {
+		query = `
+			SELECT id, account_id, reference, amount, type, status, created_at, updated_at
+			FROM transactions
+			WHERE account_id = $1
+			ORDER BY id DESC
+			LIMIT $2
+		`
+		args = []interface{}{accountID, limit}
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to fetch transactions")
+	}
+	defer rows.Close()
+
+	var transactions []*domain.Transaction
+	for rows.Next() {
+		var transaction domain.Transaction
+		var typeStr, statusStr string
+
+		err := rows.Scan(
+			&transaction.ID,
+			&transaction.AccountID,
+			&transaction.Reference,
+			&transaction.Amount,
+			&typeStr,
+			&statusStr,
+			&transaction.CreatedAt,
+			&transaction.UpdatedAt,
+		)
+		if err != nil {
+			return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "failed to scan transaction")
+		}
+
+		transaction.Type = domain.TransactionType(typeStr)
+		transaction.Status = domain.TransactionStatus(statusStr)
+		transactions = append(transactions, &transaction)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, richerror.WrapWithCode(err, genericcode.InternalServerError, "error iterating transactions")
+	}
+
+	return transactions, nil
+}

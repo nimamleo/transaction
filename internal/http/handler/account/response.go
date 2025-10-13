@@ -32,3 +32,19 @@ type TransferResponse struct {
 	ToNewBalance   int64  `json:"to_new_balance"`
 	Status         string `json:"status"`
 }
+
+type TransactionHistoryResponse struct {
+	Transactions []TransactionResponse `json:"transactions"`
+	NextCursor   string                `json:"next_cursor"`
+	HasMore      bool                  `json:"has_more"`
+}
+
+type TransactionResponse struct {
+	ID        string    `json:"id"`
+	Reference string    `json:"reference"`
+	Amount    int64     `json:"amount"`
+	Type      string    `json:"type"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

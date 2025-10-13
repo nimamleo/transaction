@@ -253,3 +253,43 @@ func (s *Service) Transfer(ctx context.Context, fromAccountID, toAccountID, refe
 		Status:         string(domain.TransactionStatusCompleted),
 	}, nil
 }
+
+func (s *Service) GetAccountTransactionHistory(ctx context.Context, accountID string, limit int, after string) (*TransactionHistoryResult, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	transactions, err := s.accountRepo.GetAccountTransactions(ctx, accountID, limit+1, after)
+	if err != nil {
+		return nil, err
+	}
+
+	hasMore := len(transactions) > limit
+	if hasMore {
+		transactions = transactions[:limit]
+	}
+
+	var nextCursor string
+	if hasMore && len(transactions) > 0 {
+		nextCursor = transactions[len(transactions)-1].ID
+	}
+
+	transactionInfos := make([]TransactionInfo, len(transactions))
+	for i, tx := range transactions {
+		transactionInfos[i] = TransactionInfo{
+			ID:        tx.ID,
+			Reference: tx.Reference,
+			Amount:    tx.Amount,
+			Type:      string(tx.Type),
+			Status:    string(tx.Status),
+			CreatedAt: tx.CreatedAt,
+			UpdatedAt: tx.UpdatedAt,
+		}
+	}
+
+	return &TransactionHistoryResult{
+		Transactions: transactionInfos,
+		NextCursor:   nextCursor,
+		HasMore:      hasMore,
+	}, nil
+}

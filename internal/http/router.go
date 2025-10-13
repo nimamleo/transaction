@@ -36,6 +36,7 @@ func (r *Router) Register(e *echo.Echo) {
 	authAPI.GET("/accounts/:id/balance", r.accountHandler.GetAccountBalance)
 	authAPI.POST("/accounts/:id/deposit", r.accountHandler.Deposit)
 	authAPI.POST("/transfers", r.accountHandler.Transfer)
+	authAPI.GET("/accounts/:id/transactions", r.accountHandler.GetAccountTransactionHistory)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "healthy"})
