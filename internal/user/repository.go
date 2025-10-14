@@ -3,12 +3,14 @@ package user
 import (
 	"context"
 	"database/sql"
+
+	"transaction/internal/user/domain"
 )
 
 type Repository interface {
-	Create(ctx context.Context, user *User) error
-	GetByID(ctx context.Context, id string) (*User, error)
-	GetByEmail(ctx context.Context, email string) (*User, error)
+	Create(ctx context.Context, user *domain.User) error
+	GetByID(ctx context.Context, id string) (*domain.User, error)
+	GetByEmail(ctx context.Context, email string) (*domain.User, error)
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 }
 
@@ -20,7 +22,7 @@ func NewRepository(db *sql.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) Create(ctx context.Context, user *User) error {
+func (r *repository) Create(ctx context.Context, user *domain.User) error {
 	query := `
 		INSERT INTO users (id, name, email, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -37,14 +39,14 @@ func (r *repository) Create(ctx context.Context, user *User) error {
 	return err
 }
 
-func (r *repository) GetByID(ctx context.Context, id string) (*User, error) {
+func (r *repository) GetByID(ctx context.Context, id string) (*domain.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
 
-	var user User
+	var user domain.User
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Name,
@@ -54,7 +56,7 @@ func (r *repository) GetByID(ctx context.Context, id string) (*User, error) {
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 
 	if err != nil {
@@ -64,14 +66,14 @@ func (r *repository) GetByID(ctx context.Context, id string) (*User, error) {
 	return &user, nil
 }
 
-func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error) {
+func (r *repository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
 		SELECT id, name, email, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
 
-	var user User
+	var user domain.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Name,
@@ -81,7 +83,7 @@ func (r *repository) GetByEmail(ctx context.Context, email string) (*User, error
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 
 	if err != nil {

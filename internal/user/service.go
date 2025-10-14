@@ -1,6 +1,10 @@
 package user
 
-import "context"
+import (
+	"context"
+
+	"transaction/internal/user/domain"
+)
 
 type Service struct {
 	repo Repository
@@ -10,17 +14,17 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateUser(ctx context.Context, name, email string) (*User, error) {
+func (s *Service) CreateUser(ctx context.Context, name, email string) (*domain.User, error) {
 	exists, err := s.repo.ExistsByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
 	if exists {
-		return nil, ErrEmailAlreadyExists
+		return nil, domain.ErrEmailAlreadyExists
 	}
 
-	user := New(name, email)
+	user := domain.New(name, email)
 
 	if err := s.repo.Create(ctx, user); err != nil {
 		return nil, err
@@ -29,6 +33,6 @@ func (s *Service) CreateUser(ctx context.Context, name, email string) (*User, er
 	return user, nil
 }
 
-func (s *Service) GetUserByID(ctx context.Context, id string) (*User, error) {
+func (s *Service) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	return s.repo.GetByID(ctx, id)
 }

@@ -6,17 +6,16 @@ import (
 	"time"
 
 	"transaction/internal/account/domain"
-	"transaction/internal/account/infrastructure"
 )
 
 type Service struct {
 	accountRepo domain.AccountRepository
 	ledger      domain.Ledger
 	cache       domain.AccountCache
-	lock        *infrastructure.Lock
+	lock        domain.Lock
 }
 
-func NewService(accountRepo domain.AccountRepository, ledger domain.Ledger, cache domain.AccountCache, lock *infrastructure.Lock) *Service {
+func NewService(accountRepo domain.AccountRepository, ledger domain.Ledger, cache domain.AccountCache, lock domain.Lock) *Service {
 	return &Service{
 		accountRepo: accountRepo,
 		ledger:      ledger,
